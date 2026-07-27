@@ -1,0 +1,528 @@
+@model OrbitNet.WebSur.Models.DashBoardViewModel
+@using OrbitNet.Services.Data;
+@{
+ViewData["Title"] = "Dashboard";
+var nodos    = Model.Matriz.ObtenerTodosLosNodos();
+var logs     = Model.Logs.ObtenerTodosLosNodos();
+var avlNodos = Model.Catalogo.ObtenerTodos();
+}
+
+@* ── Alertas globales (Siguen funcionando para acciones que recarguen la página) ── *@
+@if (ViewBag.SuccessMessage != null)
+{
+    <div class="orb-alert-success mb-3">&#10003; @ViewBag.SuccessMessage</div>
+}
+@if (ViewBag.ErrorMessage != null)
+{
+    <div class="orb-alert-error mb-3">&#9888; @ViewBag.ErrorMessage</div>
+}
+@if (ViewBag.ResultadoHttp != null)
+{
+    <div class="orb-alert-info mb-3">HTTP &rarr; @ViewBag.ResultadoHttp</div>
+}
+
+@* Contenedor para alertas dinámicas hechas con JavaScript *@
+<div id="js-alert-container"></div>
+
+<div class="row g-3">
+
+    @* ══════════════════════════════════════════
+    COLUMNA IZQUIERDA — controles
+    ═════════════════════════════════════════════ *@
+    <div class="col-lg-4">
+
+        @* ── Carga XML adaptado a POST /api/v1/space/config ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">&#8679; Carga Masiva XML (API POST)</div>
+            <form id="formCargarXml">
+                <div class="mb-2">
+                    <label class="form-label">Archivo de configuración (.xml)</label>
+                    <input type="file" id="archivoXml" accept=".xml" class="form-control" required />
+                </div>
+                <button type="submit" class="btn-orb-primary w-100">Cargar e Ingestar en API</button>
+            </form>
+        </div>
+
+        @* ── Inserción manual de nodo ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">&#43; Insertar Nodo Satelital</div>
+            <form asp-controller="Satelite" asp-action="InsertarNodo" method="post">
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label">Fila</label>
+                        <input type="number" name="row" class="form-control" placeholder="0" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Columna</label>
+                        <input type="number" name="col" class="form-control" placeholder="1" required />
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">ID (SAT-ECU-0001)</label>
+                    <input type="text" name="id" class="form-control" placeholder="SAT-ECU-0001" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre" class="form-control" placeholder="Starlink-Norte-A" required />
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">IP Address</label>
+                    <input type="text" name="ip" class="form-control" placeholder="127.0.0.1" required />
+                </div>
+                <button type="submit" class="btn-orb-primary w-100">Insertar en Matriz</button>
+            </form>
+        </div>
+
+        @* ── Eliminar nodo ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">&#8722; Eliminar Nodo</div>
+            <form asp-controller="Satelite" asp-action="EliminarNodo" method="post">
+                <div class="row g-2 mb-2">
+                    <div class="col-6">
+                        <label class="form-label">Fila</label>
+                        <input type="number" name="row" class="form-control" required />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Columna</label>
+                        <input type="number" name="col" class="form-control" required />
+                    </div>
+                </div>
+                <button type="submit" class="btn-orb-danger w-100">Eliminar de Matriz</button>
+            </form>
+        </div>
+
+        @* ── Limpiar matriz ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">&#9003; Purgar Plano</div>
+            <p class="text-muted-orb mb-2" style="font-size:0.8rem;">
+                Elimina todos los nodos de la Matriz Dispersa y el Catálogo AVL en RAM.
+            </p>
+            <form asp-controller="Satelite" asp-action="LimpiarMatriz" method="post"
+            onsubmit="return confirm('¿Purgar toda la memoria del plano satelital?')">
+            <button type="submit" class="btn-orb-danger w-100">Limpiar Todo</button>
+        </form>
+    </div>
+
+    @* ── Enrutamiento ortogonal ── *@
+    <div class="orb-card">
+        <div class="orb-card-title">&#8644; Enrutamiento Ortogonal</div>
+        <form asp-controller="Route" asp-action="Trazar" method="post">
+            <div class="mb-2">
+                <label class="form-label">Satélite Origen</label>
+                <select name="origenId" class="form-select" required>
+                    <option value="">-- Seleccionar --</option>
+                    @foreach (var n in nodos)
+                    {
+                        <option value="@n.Id">@n.Id — @n.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Satélite Destino</label>
+                <select name="destinoId" class="form-select" required>
+                    <option value="">-- Seleccionar --</option>
+                    @foreach (var n in nodos)
+                    {
+                        <option value="@n.Id">@n.Id — @n.Nombre</option>
+                    }
+                </select>
+            </div>
+            <div class="row g-2">
+                <div class="col-8">
+                    <button type="submit" class="btn-orb-primary w-100">Trazar Ruta</button>
+                </div>
+                <div class="col-4">
+                    <form asp-controller="Route" asp-action="Limpiar" method="post">
+                        <button type="submit" class="btn-orb-ghost w-100">Limpiar</button>
+                    </form>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @* ── Buffer de mensajes adaptado a POST /api/v1/space/relay y Simulación ── *@
+    <div class="orb-card">
+        <div class="orb-card-title">&#9993; Buffer de Mensajes (ABB por API)</div>
+
+        @* Encolar (Relay) *@
+        <form id="formEncolarRelay" class="mb-3">
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="form-label">Código HEX</label>
+                    <input type="text" id="hexCode" class="form-control" placeholder="A1F2" required />
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Prioridad (1–5)</label>
+                    <input type="number" id="priority" min="1" max="5" class="form-control" required />
+                </div>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">ID Emisor</label>
+                <input type="text" id="emisorId" class="form-control" placeholder="SAT-ECU-0001" required />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">IP Destino</label>
+                <input type="text" id="destIp" class="form-control" placeholder="10.0.0.50" required />
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Contenido</label>
+                <input type="text" id="content" class="form-control" placeholder="Mensaje..." required />
+            </div>
+            <button type="submit" class="btn-orb-success w-100">Transmitir Relay (Basic Auth)</button>
+        </form>
+
+        @* Avanzar Simulación (Desencolar) *@
+        <form id="formAvanzarSimulacion">
+            <div class="mb-2">
+                <label class="form-label">Ticks a procesar</label>
+                <input type="number" id="simulationTicks" class="form-control" value="1" min="1" required />
+            </div>
+            <button type="submit" class="btn-orb-amber w-100">&#9201; Avanzar Simulación Ticks</button>
+        </form>
+    </div>
+
+    @* ── Cliente HTTP Integrado para Consultar los GET ── *@
+    <div class="orb-card">
+        <div class="orb-card-title">&#8645; Consultas directas a Endpoints GET</div>
+        <div class="d-flex gap-2 mb-2">
+            <button type="button" class="btn btn-sm btn-outline-info w-50" onclick="consultarSatelites()">Satélites</button>
+            <button type="button" class="btn btn-sm btn-outline-warning w-50" onclick="consultarLogs()">Logs</button>
+        </div>
+        <div id="apiResultContainer" class="d-none">
+            <label class="form-label text-accent" style="font-size: 0.75rem;">Respuesta en tiempo real:</label>
+            <pre id="apiJsonResult" style="background: #111; color: #0f0; padding: 8px; font-size: 0.75rem; border-radius: 4px; max-height: 200px; overflow-y: auto;"></pre>
+        </div>
+    </div>
+
+    @* ── Limpiar logs ── *@
+    <div class="orb-card">
+        <div class="orb-card-title">&#9003; Bitácora</div>
+        <form asp-controller="Logs" asp-action="LimpiarLogs" method="post">
+            <button type="submit" class="btn-orb-ghost w-100">Purgar Logs de Auditoría</button>
+        </form>
+    </div>
+
+</div>
+    <div class="col-lg-8">
+
+        @* ── Reporte 1: Mapa Físico de Memoria (Matriz Dispersa Ortogonal) ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">
+                &#9737; Reporte 1 — Plano Orbital (Mapa de Memoria)
+                <span class="float-end text-muted-orb" style="font-size:0.7rem; font-weight:400; text-transform:none;">
+                    @nodos.Length nodo(s) activo(s)
+                </span>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.SvgDiagrama))
+            {
+                <div class="svg-container">
+                    @Html.Raw(Model.SvgDiagrama)
+                </div>
+            }
+            else
+            {
+                <div class="svg-container d-flex align-items-center justify-content-center" style="min-height:180px;">
+                    <span class="text-muted-orb">Sin nodos en memoria. Cargue un XML o inserte un nodo manualmente.</span>
+                </div>
+            }
+        </div>
+
+        @* ── Reporte 2: Trazabilidad de Ruta de Retransmisión ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">
+                &#8644; Reporte 2 — Trazabilidad de Ruta de Retransmisión
+                <span class="float-end text-muted-orb" style="font-size:0.7rem; font-weight:400; text-transform:none;">
+                    @(MemoriaPlano.RutaActiva != null ? $"{MemoriaPlano.RutaActiva.Length} salto(s)" : "sin ruta activa")
+                </span>
+            </div>
+            <div class="svg-container">
+                <object type="image/svg+xml"
+                        data="@Url.Action("RouteTracer", "Reports")"
+                        class="img-fluid"
+                        style="width:100%; min-height:220px;">
+                    <span class="text-muted-orb">No se pudo renderizar el Reporte 2.</span>
+                </object>
+            </div>
+            <p class="text-muted-orb mb-0 mt-2" style="font-size:0.78rem;">
+                Verde = nodos en la ruta calculada por "Enrutamiento Ortogonal". Rojo discontinuo = fuera de ruta.
+            </p>
+        </div>
+
+        @* ── Reporte 3: Matriz Unificada de Capacidad y Estado del Buffer ── *@
+        <div class="orb-card">
+            <div class="orb-card-title">
+                &#9632; Reporte 3 — Matriz Unificada de Buffers Satelitales
+            </div>
+            <div class="svg-container">
+                <object type="image/svg+xml"
+                        data="@Url.Action("BufferMatrix", "Reports")"
+                        class="img-fluid"
+                        style="width:100%; min-height:220px;">
+                    <span class="text-muted-orb">No se pudo renderizar el Reporte 3.</span>
+                </object>
+            </div>
+            <p class="text-muted-orb mb-0 mt-2" style="font-size:0.78rem;">
+                Verde &lt; 50% · Ámbar 50–79% · Rojo &ge; 80% de ocupación del buffer ABB por satélite.
+            </p>
+        </div>
+
+        <div class="orb-card">
+            <div class="orb-card-title">&#9632; Nodos en Memoria (Matriz Dispersa)</div>
+            @if (nodos.Length == 0)
+            {
+                <p class="text-muted-orb mb-0" style="font-size:0.82rem;">No hay nodos registrados en la Matriz.</p>
+            }
+            else
+            {
+                <div style="overflow-x:auto;">
+                    <table class="orb-log-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Fila</th>
+                                <th>Col</th>
+                                <th>IP Address</th>
+                                <th>Buffer</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var n in nodos)
+                            {
+                                var msgs = n.Buffer.ObtenerMensajesOrdenados();
+                                <tr>
+                                    <td><code>@n.Id</code></td>
+                                    <td>@n.Nombre</td>
+                                    <td>@n.Fila</td>
+                                    <td>@n.Columna</td>
+                                    <td><code>@n.IpAddress</code></td>
+                                    <td>
+                                        @if (msgs.Length == 0)
+                                        {
+                                            <span class="text-muted-orb">vacío</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-accent">@msgs.Length msg(s)</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="orb-card">
+            <div class="orb-card-title">&#9670; Catálogo AVL — Satélites Polares</div>
+            @if (avlNodos.Length == 0)
+            {
+                <p class="text-muted-orb mb-0" style="font-size:0.82rem;">Catálogo AVL vacío.</p>
+            }
+            else
+            {
+                <div style="overflow-x:auto;">
+                    <table class="orb-log-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Frecuencia (MHz)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var s in avlNodos)
+                            {
+                                <tr>
+                                    <td><code>@s.Id</code></td>
+                                    <td>@s.Nombre</td>
+                                    <td>@s.Frecuencia.ToString("F2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+        <div class="orb-card">
+            <div class="orb-card-title">
+                &#9741; Bitácora de Auditoría
+                <span class="float-end text-muted-orb" style="font-size:0.7rem; font-weight:400; text-transform:none;">
+                    @logs.Length evento(s)
+                </span>
+            </div>
+            @if (logs.Length == 0)
+            {
+                <p class="text-muted-orb mb-0" style="font-size:0.82rem;">Sin eventos registrados.</p>
+            }
+            else
+            {
+                <div class="log-scroll">
+                    <table class="orb-log-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Tipo</th>
+                                <th>Mensaje</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var log in logs)
+                            {
+                                string badgeClass = log.Tipo switch
+                                {
+                                    "ERROR" => "badge-error",
+                                    "ALERT" => "badge-alert",
+                                    _ => "badge-info"
+                                };
+                                <tr>
+                                    <td style="white-space:nowrap; font-size:0.73rem; color:var(--orb-muted);">
+                                        @log.MarcaDeTiempo
+                                    </td>
+                                    <td>
+                                        <span class="@badgeClass"
+                                              style="padding:0.1rem 0.45rem; border-radius:4px; font-size:0.7rem; font-weight:700;">
+                                            @log.Tipo
+                                        </span>
+                                    </td>
+                                    <td>@log.Mensaje</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>
+
+@* ══════════════════════════════════════════
+SECCIÓN DE SCRIPTS: Manejo de las peticiones AJAX/Fetch
+═════════════════════════════════════════════ *@
+@section Scripts {
+<script>
+    // Función auxiliar para renderizar alertas dinámicas
+    function mostrarAlert(mensaje, esError = false) {
+        const container = document.getElementById('js-alert-container');
+        const clase = esError ? 'orb-alert-error' : 'orb-alert-success';
+        const icono = esError ? '&#9888;' : '&#10003;';
+        container.innerHTML = `<div class="${clase} mb-3">${icono} ${mensaje}</div>`;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 1. Manejo del POST /api/v1/space/config (Carga Masiva XML)
+    document.getElementById('formCargarXml')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fileInput = document.getElementById('archivoXml');
+        if (!fileInput.files.length) return;
+
+        const archivo = fileInput.files[0];
+        const lector = new FileReader();
+
+        lector.onload = function(evt) {
+            const contenidoXml = evt.target.result;
+            const payload = { xml_data: contenidoXml };
+
+            fetch('/api/v1/space/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (response.ok) {
+                    mostrarAlert(data.message, false);
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarAlert(`Error [${data.error_code}]: ${data.details}`, true);
+                }
+            })
+            .catch(error => mostrarAlert("Error de red al procesar el XML: " + error, true));
+        };
+        lector.readAsText(archivo);
+    });
+
+    // 2. Manejo del POST /api/v1/space/relay
+    document.getElementById('formEncolarRelay')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const payload = {
+            codigo_hex: document.getElementById('hexCode').value,
+            emisor_id: document.getElementById('emisorId').value,
+            destino_ip: document.getElementById('destIp').value,
+            prioridad: parseInt(document.getElementById('priority').value),
+            contenido: document.getElementById('content').value
+        };
+
+        const username = "orbitnet_admin";
+        const password = "USAC_ECYS_2026";
+        const credentials = btoa(`${username}:${password}`);
+
+        fetch('/api/v1/space/relay', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Basic ${credentials}`
+            },
+            body: JSON.stringify(payload)
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (response.status === 201) {
+                mostrarAlert(`${data.message} (Ocupación Buffer: ${data.queue_occupancy_percentage}%)`, false);
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                mostrarAlert(`Error: ${data.details || 'Petición rechazada'}`, true);
+            }
+        })
+        .catch(error => mostrarAlert("Error en la transmisión de Relay: " + error, true));
+    });
+
+    // 3. Manejo del POST /api/v1/space/simulation/step
+    document.getElementById('formAvanzarSimulacion')?.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const ticksVal = parseInt(document.getElementById('simulationTicks').value);
+
+        fetch('/api/v1/space/simulation/step', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ticks: ticksVal })
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (response.ok) {
+                mostrarAlert(`Simulación Exitosa. Tick actual: ${data.current_tick}. ${data.details}`, false);
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                mostrarAlert("Error al procesar el tick de simulación", true);
+            }
+        })
+        .catch(error => mostrarAlert("Error de red: " + error, true));
+    });
+
+    // Funciones Auxiliares para visualizar los GET
+    function mostrarVisualizadorJson(data) {
+        const container = document.getElementById('apiResultContainer');
+        const pre = document.getElementById('apiJsonResult');
+        container.classList.remove('d-none');
+        pre.textContent = JSON.stringify(data, null, 2);
+    }
+
+    function consultarSatelites() {
+        fetch('/api/v1/space/satelites')
+        .then(res => res.json())
+        .then(data => mostrarVisualizadorJson(data))
+        .catch(err => alert("Error: " + err));
+    }
+
+    function consultarLogs() {
+        fetch('/api/v1/space/logs')
+        .then(res => res.json())
+        .then(data => mostrarVisualizadorJson(data))
+        .catch(err => alert("Error: " + err));
+    }
+</script>
+}
