@@ -1,0 +1,487 @@
+ubicación: OrbitNet.Services/Data/MemoriaPlano.cs
+
+using OrbitNet.Core.Nodes;
+using OrbitNet.Core.Structures;
+
+namespace OrbitNet.Services.Data
+{
+    /// <summary>
+    /// Clase estática global que almacena en memoria el estado del plano satelital.
+    /// Permite a los controladores acceder de manera unificada al estado en RAM.
+    /// No usa colecciones de System.Collections.
+    /// </summary>
+    public static class MemoriaPlano
+    {
+        /// <summary>TDA principal: Matriz Dispersa Ortogonal del plano satelital.</summary>
+        public static SparseMatrix Matriz { get; } = new SparseMatrix();
+
+        /// <summary>TDA de auditoría: Lista Enlazada Simple con puntero Tail.</summary>
+        public static LogAuditoria Logs { get; } = new LogAuditoria();
+
+        /// <summary>TDA catálogo: Árbol AVL de satélites polares.</summary>
+        public static AvlTree Catalogo { get; } = new AvlTree();
+
+        /// <summary>Ruta ortogonal activa calculada por el EnrutadorOrtogonal.</summary>
+        public static MatrizNode[]? RutaActiva { get; set; } = null;
+
+        /// <summary>Contador de ticks de simulación procesados.</summary>
+        public static int TickActual { get; set; } = 0;
+    }
+}
+
+
+
+
+ubicación: OrbitNet.Services/DTOs/SateliteDTO.cs
+
+using System;
+
+namespace OrbitNet.Services.DTOs
+{
+    /// <summary>
+    /// Objeto de Transferencia de Datos (DTO) para la entidad Satelite.
+    /// Esta clase es plana y no contiene punteros autorreferenciados (como Up, Down, Left, Right).
+    /// Su propósito exclusivo es ser serializada a formato JSON de forma segura, evitando 
+    /// excepciones de referencia circular (ciclos de serialización infinitos) en el framework.
+    /// </summary>
+    public class SateliteDto
+    {
+        /// <summary>
+        /// Indice de la coordenada vertical (fila) en la que se ubica el satelite.
+        /// </summary>
+        public int Fila { get; set; }
+
+        /// <summary>
+        /// Indice de la coordenada horizontal (columna) en la que se ubica el satelite.
+        /// </summary>
+        public int Columna { get; set; }
+
+        /// <summary>
+        /// Identificador unico del satelite (ejemplo: SAT-ECU-0001).
+        /// </summary>
+        public string Id { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Nombre descriptivo del satelite.
+        /// </summary>
+        public string Nombre { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Direccion IP de conexion del satelite en formato IPv4.
+        /// </summary>
+        public string IpAddress { get; set; } = string.Empty;
+    }
+}
+
+
+
+
+ubicación: OrbitNet.Services/Viusalizacion/ReportGenerator
+
+using OrbitNet.Core.Nodes;
+
+namespace OrbitNet.Services.Visualizacion
+{
+    //-----------------------------------------------------------------------
+    // Genera el código DOT para los reportes 2 y 3.
+    public class ReportGenerator
+    {
+        //-----------------------------------------------------------------------
+        // REPORTE 2 — Trazabilidad de Ruta de Retransmisión
+
+        // TODOO: Conectar con el método de recorrido de RedSatelitalPlano
+        public string GenerateRelayTracerDot(
+            MatrizNode[] allNodes,
+            string[] visitedIds,
+            string packetCode)
+        {
+            // TODOO: Cuando Desarrollador 1 entregue RedSatelitalPlano,
+            // reemplazar MatrixNode[] por el resultado de su método de recorrido
+            // convertido a arreglo estático.
+
+            var dot = new System.Text.StringBuilder();
+
+            dot.AppendLine("digraph RelayTracer {");
+            dot.AppendLine("rankdir=LR;");
+            dot.AppendLine("node [fontname=\"Consolas\", fontsize=11, style=\"filled\"];");
+            dot.AppendLine("edge [fontname=\"Consolas\", fontsize=9];");
+            dot.AppendLine($"label=\"Trazabilidad del Paquete: {EscapeDot(packetCode)}\";");
+            dot.AppendLine("labelloc=t;");
+            dot.AppendLine("fontsize=14;");
+            dot.AppendLine();
+
+            // Declaración de nodos con color dinámico
+            for (int i = 0; i < allNodes.Length; i++)
+            {
+                MatrizNode node = allNodes[i];
+                bool visited = ContainsId(visitedIds, node.Id);
+
+                string fillColor;
+                string fontColor;
+                string style;
+
+                if (visited)
+                {
+                    fillColor = "#2ECC71";
+                    fontColor = "#000000";
+                    style = "filled";
+                }
+                else
+                {
+                    fillColor = "#E74C3C";
+                    fontColor = "#FFFFFF";
+                    style = "dashed, filled";
+                }
+
+                string label = EscapeDot(node.Id) +
+                   "\\n(" + node.Fila + "," + node.Columna + ")" +
+                   "\\n" + EscapeDot(node.IpAddress);
+
+                dot.AppendLine(
+                    $"    \"{EscapeDot(node.Id)}\" " +
+                    $"[label=\"{label}\", " +
+                    $"fillcolor=\"{fillColor}\", " +
+                    $"fontcolor=\"{fontColor}\", " +
+                    $"style=\"{style}\", " +
+                    $"shape=ellipse];"
+                );
+            }
+
+            dot.AppendLine();
+
+            for (int i = 1; i < allNodes.Length; i++)
+            {
+                MatrizNode prev = allNodes[i - 1];
+                MatrizNode curr = allNodes[i];
+
+                bool bothVisited = ContainsId(visitedIds, prev.Id) && ContainsId(visitedIds, curr.Id);
+
+                if (bothVisited)
+                {
+                    dot.AppendLine(
+                        $"    \"{EscapeDot(prev.Id)}\" -> \"{EscapeDot(curr.Id)}\" " +
+                        $"[penwidth=3.0, color=\"#27AE60\", arrowhead=vee];"
+                    );
+                }
+                else
+                {
+                    dot.AppendLine(
+                        $"    \"{EscapeDot(prev.Id)}\" -> \"{EscapeDot(curr.Id)}\" " +
+                        $"[penwidth=1.0, color=\"#95A5A6\", style=dashed];"
+                    );
+                }
+            }
+
+            dot.AppendLine("}");
+            return dot.ToString();
+        }
+
+
+        //--------------------------------------------------------------------
+        // REPORTE 3 — Matriz Unificada de Capacidad y Estado del Buffer
+
+        // nombre = "allNodes" verificar el noombre despues 
+        // TODOO: Conectar con el recorrido completo de RedSatelitalPlano
+
+        // nombre = "maxCapacity" verificar el noombre despues 
+        // TODOO: Conectar con propiedad de BufferMensajes (Desarrollador 2).
+        public string GenerateBufferMatrixDot(
+            MatrizNode[] allNodes,
+            int maxCapacity = 5)
+        {
+            // TODO: Cuando Desarrollador 2 entregue BufferMensajes,
+            // leer node.Buffer.Count para obtener ocupación real.
+
+            var dot = new System.Text.StringBuilder();
+
+            dot.AppendLine("digraph BufferMatrix {");
+            dot.AppendLine("rankdir=TB;");
+            dot.AppendLine("node [shape=plaintext, fontname=\"Consolas\", fontsize=10];");
+            dot.AppendLine("label=\"Estado de Buffers Satelitales\";");
+            dot.AppendLine("labelloc=t;");
+            dot.AppendLine("fontsize=14;");
+            dot.AppendLine();
+
+            for (int i = 0; i < allNodes.Length; i++)
+            {
+                MatrizNode node = allNodes[i];
+
+                // TODOO: Reemplazar por node.Buffer.Count cuando BufferMensajes esté completo.
+                int occupied = node.Buffer.Contar;
+                int free = maxCapacity - occupied;
+                double pct = 0.0;
+
+                if (maxCapacity > 0)
+                {
+                    pct = (occupied / (double)maxCapacity) * 100.0;
+                }
+
+                string barColor = "#2ECC71";
+
+                if (pct >= 80)
+                {
+                    barColor = "#E74C3C";
+                }
+                else if (pct >= 50)
+                {
+                    barColor = "#F39C12";
+                }
+
+                // TODOO: Cuando Desarrollador 2 entregue método de recorrido
+                // en BufferMensajes, reemplazar este string por la lista real
+                // de HexCodes de mensajes en cola.
+                string mensajesEnCola = "(pendiente integracion BufferMensajes)";
+
+                string nodeId = "buf_" + EscapeDotId(node.Id);
+
+                string label = BuildBufferHtmlLabel(
+                    node.Id,
+                    node.Fila,
+                    node.Columna,
+                    occupied,
+                    maxCapacity,
+                    pct,
+                    barColor,
+                    mensajesEnCola
+                );
+
+                dot.AppendLine($"    {nodeId} [label={label}];");
+                dot.AppendLine();
+            }
+
+            dot.AppendLine("}");
+            return dot.ToString();
+        }
+
+
+        //---------------------------------------------------------
+        // Helpers privados
+
+        // Búsqueda lineal manual sobre arreglo de IDs.
+        // Reemplaza el uso de HashSet o Contains de colecciones nativas.
+
+        private static bool ContainsId(string[] ids, string target)
+        {
+            if (ids == null || target == null)
+            {
+                return false;
+            }
+            for (int i = 0; i < ids.Length; i++)
+            {
+                if (ids[i] == target) return true;
+            }
+            return false;
+        }
+
+        // Construye la etiqueta HTML de Graphviz para una celda del Buffer Matrix
+        private string BuildBufferHtmlLabel(
+            string id, int row, int col,
+            int occupied, int total, double pct,
+            string barColor, string mensajes)
+        {
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine("<<table border=\"1\" cellborder=\"0\" cellspacing=\"2\" bgcolor=\"#FDFEFE\">");
+
+            sb.AppendLine(
+                $"  <tr><td colspan=\"2\" bgcolor=\"#2C3E50\">" +
+                $"<font color=\"white\"><b>{EscapeHtml(id)}</b></font></td></tr>");
+
+            sb.AppendLine(
+                $"  <tr><td align=\"left\"><font point-size=\"9\">Pos:</font></td>" +
+                $"<td align=\"right\"><font point-size=\"9\">({row}, {col})</font></td></tr>");
+
+            sb.AppendLine(
+                $"  <tr><td align=\"left\"><font point-size=\"9\">Buffer:</font></td>" +
+                $"<td align=\"right\"><font point-size=\"9\">{occupied}/{total} ({pct:F0}%)</font></td></tr>");
+
+            sb.AppendLine("  <tr><td colspan=\"2\">");
+            sb.AppendLine("    <table border=\"0\" cellborder=\"0\" cellspacing=\"1\"><tr>");
+
+            int filledCells = (int)(pct / 10.0);
+
+            for (int i = 0; i < 10; i++)
+            {
+                string cellBg = "#D5DBDB";
+
+                if (i < filledCells)
+                {
+                    cellBg = barColor;
+                }
+
+                sb.Append($"<td width=\"12\" height=\"8\" bgcolor=\"{cellBg}\"> </td>");
+            }
+
+            sb.AppendLine("</tr></table>");
+            sb.AppendLine("  </td></tr>");
+
+            sb.AppendLine(
+                $"  <tr><td colspan=\"2\" align=\"left\">" +
+                $"<font point-size=\"8\">Cola: {EscapeHtml(mensajes)}</font></td></tr>");
+
+            sb.AppendLine("</table>>");
+
+            return sb.ToString();
+        }
+
+        // Escapa caracteres especiales para etiquetas DOT entre comillas 
+        private static string EscapeDot(string value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            return value
+                .Replace("\\", "\\\\")
+                .Replace("\"", "\\\"")
+                .Replace("\n", "\\n");
+        }
+
+        //Convierte un ID a formato seguro para nombre de nodo DOT
+        private static string EscapeDotId(string value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                if (c == '-' || c == '.' || c == ' ')
+                    sb.Append('_');
+                else
+                    sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
+        //Escapa caracteres especiales en etiquetas HTML de Graphviz
+        private static string EscapeHtml(string value)
+        {
+            if (value == null)
+            {
+                return "";
+            }
+            var sb = new System.Text.StringBuilder();
+            for (int i = 0; i < value.Length; i++)
+            {
+                switch (value[i])
+                {
+                    case '&':
+                        {
+                            sb.Append("&amp;");
+                        }
+                        break;
+                    case '<':
+                        {
+                            sb.Append("&lt;");
+                        }
+                        break;
+                    case '>':
+                        {
+                            sb.Append("&gt;");
+                        }
+                        break;
+                    case '"':
+                        {
+                            sb.Append("&quot;");
+                        }
+                        break;
+                    default:
+                        sb.Append(value[i]);
+                        break;
+                }
+            }
+            return sb.ToString();
+        }
+    }
+}
+
+
+
+
+ubicación: OrbitNet.Services/Viusalizacion/GraphvizCompilador
+
+using System;
+using System.Diagnostics;
+using System.IO;
+
+
+
+namespace OrbitNet.Services.Visualizacion
+{
+    public static class GraphvizCompilador
+    {
+        public static string CompilarDotASvg(string dotSourceCode)
+        {
+            try
+            {
+                using (Process process = new Process())
+                {
+                    process.StartInfo.FileName = ObtenerRutaDot();
+                    process.StartInfo.Arguments = "-Tsvg";
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.RedirectStandardInput = true;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.CreateNoWindow = true;
+
+                    process.Start();
+
+                    // Escribir el código DOT en la entrada estándar
+                    using (StreamWriter writer = process.StandardInput)
+                    {
+                        writer.Write(dotSourceCode);
+                        writer.Flush();
+                    } // Al salir del bloque using se cierra el StandardInput, indicando fin de transmisión a dot.exe
+
+                    // Leer los resultados de salida y de error
+                    string svgOutput = process.StandardOutput.ReadToEnd();
+                    string errorOutput = process.StandardError.ReadToEnd();
+
+                    process.WaitForExit();
+
+                    if (process.ExitCode != 0)
+                    {
+                        throw new Exception($"Graphviz falló con código de salida {process.ExitCode}. Detalle: {errorOutput}");
+                    }
+
+                    // Extraer únicamente el marcado XML del SVG (omitir posibles avisos iniciales)
+                    int svgStartIdx = svgOutput.IndexOf("<svg");
+                    if (svgStartIdx >= 0)
+                    {
+                        return svgOutput.Substring(svgStartIdx);
+                    }
+
+                    return svgOutput;
+                }
+            }
+            catch (Exception ex)
+            {
+                // Retorna un SVG de error en caso de que Graphviz no esté instalado o falle
+                return $@"<svg width=""500"" height=""80"" xmlns=""http://www.w3.org/2000/svg"">
+                            <rect width=""100%"" height=""100%"" fill=""#FADBD8"" rx=""10""/>
+                            <text x=""20"" y=""45"" font-family=""monospace"" font-size=""12"" fill=""#78281F"">
+                                Error al renderizar: {ex.Message}
+                            </text>
+                        </svg>";
+            }
+        }
+
+        private static string ObtenerRutaDot()
+        {
+            string path1 = @"C:\Program Files\Graphviz\bin\dot.exe";
+            if (File.Exists(path1)) return path1;
+
+            string path2 = @"C:\Program Files (x86)\Graphviz\bin\dot.exe";
+            if (File.Exists(path2)) return path2;
+
+            return "dot";
+        }
+    }
+}
+
+
+
+
