@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>@ViewData["Title"] - OrbitNet WebNorte</title>
+        <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+        <link rel="stylesheet" href="~/OrbitNet.WebNorte.styles.css" asp-append-version="true" />
+        <style>
+            :root {
+            --orb-dark:    #0b0f1a;
+            --orb-panel:   #111827;
+            --orb-border:  #1e2d45;
+            --orb-accent:  #00aaff;
+            --orb-green:   #2ecc71;
+            --orb-red:     #e74c3c;
+            --orb-amber:   #f39c12;
+            --orb-text:    #c9d6e3;
+            --orb-muted:   #5a6a7e;
+            --orb-radius:  6px;
+        }
+
+        html, body {
+        background-color: var(--orb-dark);
+        color: var(--orb-text);
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 0.92rem;
+        min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    .orb-navbar {
+    background-color: var(--orb-panel);
+    border-bottom: 1px solid var(--orb-border);
+    padding: 0.55rem 1.2rem;
+}
+.orb-navbar .navbar-brand {
+color: var(--orb-accent);
+font-weight: 700;
+letter-spacing: 0.04em;
+font-size: 1rem;
+}
+.orb-navbar .navbar-brand:hover { color: #40c4ff; }
+.orb-navbar .nav-link {
+color: var(--orb-muted);
+font-size: 0.85rem;
+padding: 0.35rem 0.75rem;
+border-radius: var(--orb-radius);
+transition: color 0.15s, background 0.15s;
+}
+.orb-navbar .nav-link:hover,
+.orb-navbar .nav-link.active {
+color: var(--orb-text);
+background: var(--orb-border);
+}
+.orb-badge-norte {
+background: var(--orb-accent);
+color: #000;
+font-size: 0.68rem;
+font-weight: 700;
+padding: 0.15rem 0.5rem;
+border-radius: 20px;
+letter-spacing: 0.06em;
+margin-left: 0.5rem;
+}
+
+/* ── Cards / Panels ── */
+.orb-card {
+background: var(--orb-panel);
+border: 1px solid var(--orb-border);
+border-radius: var(--orb-radius);
+padding: 1.1rem 1.3rem;
+margin-bottom: 1rem;
+}
+.orb-card-title {
+color: var(--orb-accent);
+font-size: 0.78rem;
+font-weight: 700;
+text-transform: uppercase;
+letter-spacing: 0.1em;
+margin-bottom: 0.8rem;
+border-bottom: 1px solid var(--orb-border);
+padding-bottom: 0.5rem;
+}
+
+/* ── Forms ── */
+.form-control, .form-select {
+background: #0d1525;
+border: 1px solid var(--orb-border);
+color: var(--orb-text);
+font-size: 0.85rem;
+border-radius: var(--orb-radius);
+}
+.form-control:focus, .form-select:focus {
+background: #0d1525;
+border-color: var(--orb-accent);
+color: var(--orb-text);
+box-shadow: 0 0 0 2px rgba(0,170,255,0.15);
+}
+.form-label {
+color: var(--orb-muted);
+font-size: 0.78rem;
+text-transform: uppercase;
+letter-spacing: 0.06em;
+margin-bottom: 0.3rem;
+}
+
+/* ── Buttons ── */
+.btn-orb-primary {
+background: var(--orb-accent);
+border: none;
+color: #000;
+font-weight: 600;
+font-size: 0.82rem;
+padding: 0.38rem 0.9rem;
+border-radius: var(--orb-radius);
+transition: filter 0.15s;
+}
+.btn-orb-primary:hover { filter: brightness(1.15); color: #000; }
+
+.btn-orb-danger {
+background: var(--orb-red);
+border: none;
+color: #fff;
+font-weight: 600;
+font-size: 0.82rem;
+padding: 0.38rem 0.9rem;
+border-radius: var(--orb-radius);
+transition: filter 0.15s;
+}
+.btn-orb-danger:hover { filter: brightness(1.15); color: #fff; }
+
+.btn-orb-ghost {
+background: transparent;
+border: 1px solid var(--orb-border);
+color: var(--orb-muted);
+font-size: 0.82rem;
+padding: 0.38rem 0.9rem;
+border-radius: var(--orb-radius);
+transition: border-color 0.15s, color 0.15s;
+}
+.btn-orb-ghost:hover {
+border-color: var(--orb-accent);
+color: var(--orb-accent);
+}
+
+.btn-orb-success {
+background: var(--orb-green);
+border: none;
+color: #000;
+font-weight: 600;
+font-size: 0.82rem;
+padding: 0.38rem 0.9rem;
+border-radius: var(--orb-radius);
+transition: filter 0.15s;
+}
+.btn-orb-success:hover { filter: brightness(1.12); color: #000; }
+
+.btn-orb-amber {
+background: var(--orb-amber);
+border: none;
+color: #000;
+font-weight: 600;
+font-size: 0.82rem;
+padding: 0.38rem 0.9rem;
+border-radius: var(--orb-radius);
+transition: filter 0.15s;
+}
+.btn-orb-amber:hover { filter: brightness(1.12); color: #000; }
+
+/* ── Alerts ── */
+.orb-alert-success {
+background: rgba(46,204,113,0.1);
+border: 1px solid rgba(46,204,113,0.3);
+color: #2ecc71;
+border-radius: var(--orb-radius);
+padding: 0.6rem 0.9rem;
+font-size: 0.83rem;
+}
+.orb-alert-error {
+background: rgba(231,76,60,0.1);
+border: 1px solid rgba(231,76,60,0.3);
+color: #e74c3c;
+border-radius: var(--orb-radius);
+padding: 0.6rem 0.9rem;
+font-size: 0.83rem;
+}
+.orb-alert-info {
+background: rgba(0,170,255,0.08);
+border: 1px solid rgba(0,170,255,0.25);
+color: var(--orb-accent);
+border-radius: var(--orb-radius);
+padding: 0.6rem 0.9rem;
+font-size: 0.83rem;
+}
+
+/* ── Severity badges ── */
+.badge-info  { background: rgba(0,170,255,0.2); color: var(--orb-accent); }
+.badge-alert { background: rgba(243,156,18,0.2); color: var(--orb-amber); }
+.badge-error { background: rgba(231,76,60,0.2); color: var(--orb-red); }
+
+/* ── Log table ── */
+.orb-log-table {
+width: 100%;
+font-size: 0.78rem;
+border-collapse: collapse;
+}
+.orb-log-table th {
+color: var(--orb-muted);
+text-transform: uppercase;
+letter-spacing: 0.07em;
+font-size: 0.7rem;
+padding: 0.4rem 0.6rem;
+border-bottom: 1px solid var(--orb-border);
+text-align: left;
+}
+.orb-log-table td {
+padding: 0.35rem 0.6rem;
+border-bottom: 1px solid rgba(30,45,69,0.5);
+vertical-align: top;
+color: var(--orb-text);
+}
+.orb-log-table tr:last-child td { border-bottom: none; }
+.log-scroll { max-height: 220px; overflow-y: auto; }
+
+/* ── SVG container ── */
+.svg-container {
+background: #080d18;
+border: 1px solid var(--orb-border);
+border-radius: var(--orb-radius);
+overflow: auto;
+padding: 0.8rem;
+min-height: 200px;
+}
+.svg-container svg {
+max-width: 100%;
+height: auto;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--orb-dark); }
+::-webkit-scrollbar-thumb { background: var(--orb-border); border-radius: 3px; }
+
+/* ── Footer ── */
+.orb-footer {
+border-top: 1px solid var(--orb-border);
+color: var(--orb-muted);
+font-size: 0.76rem;
+padding: 0.7rem 1.2rem;
+margin-top: 2rem;
+text-align: center;
+}
+
+/* ── Misc ── */
+.text-accent { color: var(--orb-accent); }
+.text-muted-orb { color: var(--orb-muted); }
+code {
+background: rgba(0,170,255,0.08);
+color: var(--orb-accent);
+padding: 0.1rem 0.35rem;
+border-radius: 3px;
+font-size: 0.82em;
+}
+hr { border-color: var(--orb-border); opacity: 1; }
+</style>
+</head>
+<body>
+    <header>
+        <nav class="orb-navbar navbar navbar-expand-lg">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
+                    &#9711; OrbitNet
+                    <span class="orb-badge-norte">NORTE · 5000</span>
+                </a>
+                <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navMain">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navMain">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Dashboard</a>
+                        </li>
+                    </ul>
+                    <span class="text-muted-orb me-3" style="font-size:0.75rem;">
+                        Hemisferio Norte &mdash; Puerto 5000
+                    </span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid px-3 pt-3">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="orb-footer">
+        OrbitNet-NetCore &copy; 2026 &mdash; USAC Facultad de Ingeniería &mdash; IPC2
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

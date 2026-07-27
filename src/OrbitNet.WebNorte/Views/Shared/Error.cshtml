@@ -1,0 +1,24 @@
+@model OrbitNet.WebNorte.Models.ErrorViewModel
+@{
+    ViewData["Title"] = "Error";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-6">
+        <div class="orb-card">
+            <div class="orb-card-title">&#9888; Error del Sistema</div>
+            <p class="orb-alert-error">
+                Se produjo un error inesperado en el servidor OrbitNet.
+            </p>
+            @if (Model.ShowRequestId)
+            {
+                <p style="font-size:0.82rem;">
+                    Request ID: <code>@Model.RequestId</code>
+                </p>
+            }
+            <a asp-controller="Home" asp-action="Index" class="btn-orb-ghost">
+                &larr; Volver al Dashboard
+            </a>
+        </div>
+    </div>
+</div>
