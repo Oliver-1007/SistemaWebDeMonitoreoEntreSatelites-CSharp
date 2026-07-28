@@ -1,4 +1,4 @@
-# 🛰️ OrbitNet-NetCore
+# OrbitNet-NetCore
 
 Sistema web de **monitoreo, enrutamiento y simulación de conexiones satelitales distribuidas** desarrollado en **C# / ASP.NET Core MVC (.NET 8.0)**. Simula una constelación satelital en tiempo real mediante dos instancias web independientes que se comunican entre sí vía **REST con HTTP Basic Authentication**, gestionando el tránsito de paquetes de datos a través de estructuras de datos abstractas (TDAs) construidas completamente a mano, sin colecciones nativas del framework.
 
@@ -6,7 +6,7 @@ Proyecto desarrollado como **Proyecto Único** del curso **Introducción a la Pr
 
 ---
 
-## 📋 Descripción
+## Descripción
 
 **OrbitNet-NetCore** modela una red de telecomunicaciones satelitales distribuidas: satélites de órbita baja y media (constelaciones polares y ecuatoriales) que enrutan paquetes de datos hacia estaciones terrestres receptoras, buscando la ruta óptima de descarga.
 
@@ -21,7 +21,7 @@ Toda la persistencia vive **en memoria RAM**, mediante estructuras de datos auto
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 Patrón **Modelo-Vista-Controlador (MVC)** con flujo de dependencia estrictamente unidireccional:
 
@@ -38,7 +38,7 @@ Vista (Razor) → Controlador (API/MVC) → Capa de Servicio → Capa de Persist
 
 ---
 
-## 🧠 Estructuras de Datos Abstractas (TDAs)
+## Estructuras de Datos Abstractas (TDAs)
 
 Todas las estructuras se implementaron manualmente con punteros de tipo objeto, cumpliendo la interfaz base `IAbstractCollection`.
 
@@ -56,14 +56,14 @@ Todas las estructuras se implementaron manualmente con punteros de tipo objeto, 
 
 ---
 
-## ✨ Funcionalidades principales
+## Funcionalidades principales
 
-### 📥 Motor de Ingesta y Carga Masiva
+### Motor de Ingesta y Carga Masiva
 - Parseo de configuración vía **XML + XPath** (`XmlDocument` con `XmlResolver = null` para mitigar XXE).
 - Validaciones sintácticas estrictas con **expresiones regulares** (ID de satélite, IPv4, coordenadas).
 - Carga **transaccional atómica**: si un registro falla la validación, se cancela toda la carga y se revierte el estado en memoria, registrando el error en la bitácora.
 
-### 🌐 Protocolo REST Multi-Puerto
+### Protocolo REST Multi-Puerto
 - Comunicación entre instancias mediante `IHttpClientFactory` y peticiones POST síncronas.
 - Autenticación obligatoria vía **HTTP Basic Authentication** (credenciales codificadas en Base64).
 - Rechazo con `401 Unauthorized` ante credenciales inválidas o ausentes.
@@ -76,7 +76,7 @@ Todas las estructuras se implementaron manualmente con punteros de tipo objeto, 
 | `POST` | `/api/v1/space/relay` | Enrutamiento inter-satelital (requiere Basic Auth) |
 | `POST` | `/api/v1/space/simulation/step` | Avance de simulación por *ticks* |
 
-### 📊 Visualización en Memoria con Graphviz
+### Visualización en Memoria con Graphviz
 Generación de reportes vectoriales SVG **compilados en caliente**, sin escritura de archivos temporales en disco — el proceso `dot.exe` recibe el código DOT por `StandardInput` y retorna el SVG por `StandardOutput`, evitando *deadlocks* de buffer mediante cierre explícito del canal de entrada antes de leer la salida.
 
 | Reporte | Contenido |
@@ -85,11 +85,11 @@ Generación de reportes vectoriales SVG **compilados en caliente**, sin escritur
 | **Relay Route Tracer** | Trazabilidad de la ruta de retransmisión de un paquete, coloreando nodos activos/inactivos |
 | **Matriz de Capacidad del Buffer** | Mapa consolidado de ocupación de las colas de prioridad por satélite |
 
-### 🔒 Seguridad (OWASP)
+### Seguridad (OWASP)
 - Mitigación de **XXE** deshabilitando la resolución de entidades externas en el parser XML.
 - Sanitización del código DOT antes de inyectarlo con `@Html.Raw()` para prevenir **XSS**.
 
-### 🧪 Pruebas Automatizadas
+### Pruebas Automatizadas
 Proyecto de pruebas desacoplado con **xUnit/NUnit**, cubriendo:
 - Balanceo correcto del árbol AVL ante inserciones desordenadas.
 - Integridad de punteros en la matriz dispersa tras eliminaciones.
@@ -98,7 +98,7 @@ Proyecto de pruebas desacoplado con **xUnit/NUnit**, cubriendo:
 
 ---
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 - **Lenguaje / Framework:** C# — ASP.NET Core MVC (.NET 8.0)
 - **Persistencia:** Memoria RAM — TDAs manuales autorreferenciados (sin `System.Collections`)
@@ -111,7 +111,7 @@ Proyecto de pruebas desacoplado con **xUnit/NUnit**, cubriendo:
 
 ---
 
-## 🚀 Cómo ejecutar el proyecto
+## Cómo ejecutar el proyecto
 
 ### Requisitos previos
 - .NET 8.0 SDK
@@ -136,7 +136,7 @@ Desde la interfaz web de cada instancia, cargar el archivo XML de topología cor
 
 ---
 
-## 📂 Estructura del repositorio
+## Estructura del repositorio
 
 ```
 OrbitNet-NetCore/
@@ -160,7 +160,7 @@ OrbitNet-NetCore/
 
 ---
 
-## ✅ Validaciones implementadas
+## Validaciones implementadas
 
 - ID de satélite: `^SAT-(ECU|POL)-\d{4}$`
 - Dirección IPv4 válida mediante regex estándar.
@@ -169,13 +169,13 @@ OrbitNet-NetCore/
 
 ---
 
-## 🎓 Contexto académico
+## Contexto académico
 
 Proyecto grupal desarrollado para el curso **IPC2** de la Escuela de Ciencias y Sistemas (USAC), aplicando estructuras de datos no lineales, arquitectura MVC en C#/.NET, comunicación REST distribuida, generación de gráficos vectoriales en memoria y buenas prácticas de control de versiones bajo Git Flow.
 
 ---
 
-## 👤 Autor
+## Autor
 
-**Jorge** — Estudiante de Ingeniería en Sistemas, USAC
+**Oliver Jorge Raxtun Morales** — Estudiante de Ingeniería en Sistemas, USAC
 Facultad de Ingeniería, Universidad de San Carlos de Guatemala
